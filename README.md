@@ -6,13 +6,11 @@ This is not the full shader but because my motivation is starting to waver, I'm 
 This page could go down or change completely at any point.
 
 ## How to use 
-1. Create a new folder inside of sub called tex.
-   - This is where you'll put your metal and face shadow textures.
-   - I won't provide any files. Theres are tutorials around for creating the kind of texture needed for the face.
-2. Create a copy of the material_default.fx and change the settings for the model youre working on
-3. In PMX Editor, put the ramp texture in the toon slot.
-4. Put the lightmaps in the spa/sph slot and set the type to subtex for everything that isnt the face.
-5. For the face, you will want to load the _shadow texture into the spa/sph slot instead and set it to either Add or Multu. 
+- I won't provide any files. There are tutorials online about how to make the textures needed
+1. Create a copy of the material_default.fx and change the settings for the model youre working on
+2. In PMX Editor, put the ramp texture in the toon slot.
+3. Put the lightmaps in the spa/sph slot and set the type to subtex for everything that isnt the face.
+4. For the face, you will want to load the _shadow texture into the spa/sph slot instead and set it to either Add or Multu. 
 
 
 ## Rules 
