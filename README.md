@@ -18,3 +18,8 @@ Shader written for MMD to replicate the visual style of Genshin Impact
 
 ## Contact 
 If you find any issues or have questions, feel free to create a new issue here or DM me on [Twitter](https://twitter.com/Manashiku) or on Discord ( mana#3458 ). 
+
+## Resources
+These were incredibly helpful
+https://zhuanlan.zhihu.com/p/360229590
+https://github.com/ColinLeung-NiloCat/UnityURPToonLitShaderExample
