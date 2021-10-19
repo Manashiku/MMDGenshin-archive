@@ -3,9 +3,9 @@ float3 lightDirection : DIRECTION < string Object = "Light"; >;
 float2 screenSize : VIEWPORTPIXELSIZE; // current screen size in pixels
 
 float4x4 model_matrix : CONTROLOBJECT < string name = "(self)";>;
-float4x4 head_bone : CONTROLOBJECT < string name = "(self)"; string item = "“ª"; >;
-float4x4 neck_bone : CONTROLOBJECT < string name = "(self)"; string item = "Žñ"; >;
-float4x4 center_bone : CONTROLOBJECT < string name = "(self)"; string item = "ƒZƒ“ƒ^["; >;
+float4x4 head_bone : CONTROLOBJECT < string name = "(self)"; string item = "â€œÂª"; >;
+float4x4 neck_bone : CONTROLOBJECT < string name = "(self)"; string item = "Å½Ã±"; >;
+float4x4 center_bone : CONTROLOBJECT < string name = "(self)"; string item = "Æ’ZÆ’â€œÆ’^Â["; >;
 float blush_morph : CONTROLOBJECT < string name = "(self)"; string item = blush_facial; >; // this will be turned into a bool thats more responsive
 float time_of_day : CONTROLOBJECT < string name = "genshin.pmx"; string item = "time of day"; >; // this will be turned into a bool thats more responsive
 
