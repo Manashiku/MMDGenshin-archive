@@ -1,6 +1,10 @@
 # MMDGenshin
 Shader written for MMD to replicate the visual style of Genshin Impact
 
+# Important
+This is not the full shader but because my motivation is starting to waver, I'm releasing the shader as a beta for now. I will continue to work on it as normal.
+This page could go down or change completely at any point.
+
 ## How to use 
 1. Create a new folder inside of sub called tex.
    - This is where you'll put your metal and face shadow textures.
