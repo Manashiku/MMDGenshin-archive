@@ -11,7 +11,7 @@ This page could go down or change completely at any point.
 1. Create a copy of the material_default.fx and change the settings for the model youre working on
 2. In PMX Editor, put the ramp texture in the toon slot.
 3. Put the lightmaps in the spa/sph slot and set the type to subtex for everything that isnt the face.
-4. For the face, you will want to load the _shadow texture into the spa/sph slot instead and set it to either Add or Multu. 
+4. For the face, you will want to load the _shadow texture into the spa/sph slot instead and set it to either Add or Multi. 
 
 
 ## Rules 
