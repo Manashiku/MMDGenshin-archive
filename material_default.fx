@@ -10,6 +10,8 @@
 // =================================================================================================//
 // OPTIONS : 
 // Culling
+#define exported_from_noesis // this is important because theres really important data that will be missing
+// if it wasnt and it will mess up how it is rendered
 #define is_double_sided 
     // #define use_second_uv // use secondary uv as texture coordinates for flipped faces (double side)
     
