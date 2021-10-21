@@ -47,6 +47,9 @@ vs_out vs_0(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : 
 edge_out edge_vs(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : TEXCOORD2, float2 uv : TEXCOORD0)
 {
     edge_out o;
+    #ifndef exported_from_noesis
+    vertexColor = 0.5;
+    #endif
     float3 camera = cameraPosition - mul(pos.xyz, (float3x3)mmd_world);
     pos.xyz = outline(pos, cameraPosition, normal, outline_thickness,  vertexColor.a) ;
     o.pos = mul(pos, mmd_world_view_projection);
@@ -68,6 +71,10 @@ shadow_out vs_gs(float4 pos : POSITION, float2 uv : TEXCOORD0)
 // PIXEL : 
 float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
 {
+
+    #ifndef exported_from_noesis
+    i.vertex = 1.0;
+    #endif
     // INITIALIZE INPUTS : 
     float2 uv = i.uv; 
     if(use_uv2)
@@ -108,6 +115,9 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
             black_lines = light.g;
         }
     }
+    #ifndef exported_from_noesis
+    i.vertex.r = 1.0;
+    #endif
     float ramp_ndotl = calculate_ndotl(uv, normal);
     ramp_ndotl = ramp_ndotl * i.vertex.r * saturate(side); // saturate(side) is the VFACE value clamped
     float ramp_value = step(shadow_rate, ramp_ndotl); // compare shadow_rate and ramp_ndotl
@@ -150,6 +160,8 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     {
         color.rgb = color.rgb * make_blush(diffuse.a);
     }
+    // color.rgb = dot(normal, -lightDirection);
+    // color.rgb = light.g;
     return color;
 }
 
