@@ -12,6 +12,7 @@ This page could go down or change completely at any point.
 2. In PMX Editor, put the ramp texture in the toon slot.
 3. Put the lightmaps in the spa/sph slot and set the type to subtex for everything that isnt the face.
 4. For the face, you will want to load the _shadow texture into the spa/sph slot instead and set it to either Add or Multi. 
+### [A tutorial made by chips](https://www.youtube.com/watch?v=BVSgU7WKLaA)
 
 
 ## Rules 
