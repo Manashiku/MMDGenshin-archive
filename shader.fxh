@@ -160,8 +160,6 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     {
         color.rgb = color.rgb * make_blush(diffuse.a);
     }
-    // color.rgb = dot(normal, -lightDirection);
-    // color.rgb = light.g;
     return color;
 }
 
