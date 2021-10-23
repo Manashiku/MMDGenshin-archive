@@ -3,9 +3,9 @@ float3 lightDirection : DIRECTION < string Object = "Light"; >;
 float2 screenSize : VIEWPORTPIXELSIZE; // current screen size in pixels
 
 float4x4 model_matrix : CONTROLOBJECT < string name = "(self)";>;
-float4x4 head_bone : CONTROLOBJECT < string name = "(self)"; string item = "“ª"; >;
-float4x4 neck_bone : CONTROLOBJECT < string name = "(self)"; string item = "Žñ"; >;
-float4x4 center_bone : CONTROLOBJECT < string name = "(self)"; string item = "ƒZƒ“ƒ^["; >;
+float4x4 head_bone : CONTROLOBJECT < string name = "(self)"; string item = "頭"; >;
+float4x4 neck_bone : CONTROLOBJECT < string name = "(self)"; string item = "首"; >;
+float4x4 center_bone : CONTROLOBJECT < string name = "(self)"; string item = "センター"; >;
 float blush_morph : CONTROLOBJECT < string name = "(self)"; string item = blush_facial; >; // this will be turned into a bool thats more responsive
 float time_of_day : CONTROLOBJECT < string name = "genshin.pmx"; string item = "time of day"; >; // this will be turned into a bool thats more responsive
 
@@ -346,7 +346,11 @@ float3 metal_shading(sampler metal_sampler, float3 normal, float metal_mask, flo
     // sample metal texture
     float matcap = tex2D(metal_sampler, sphereUV(normal * metal_mask));
     float area = 0; // starting area is 0
-    if(metal_mask > 0.75)
+    float test_value = 0.75;
+    #ifdef metal_comp_test
+    test_value = metal_comp_test;
+    #endif
+    if(metal_mask > test_value)
     {
         area = metal_mask; // because of weird hard edges, setting area to metal_mask reduces them
     }
