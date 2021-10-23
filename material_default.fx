@@ -9,15 +9,14 @@
 // shader in game.                                                                                  //
 // =================================================================================================//
 // OPTIONS : 
-
-#define exported_from_noesis // this is important because theres really important data that will be missing
+// #define exported_from_noesis // this is important because theres really important data that will be missing
 // if it wasnt and it will mess up how it is rendered
 // Culling
 #define is_double_sided 
     // #define use_second_uv // use secondary uv as texture coordinates for flipped faces (double side)
     
 // Face options : 
-#define face_tex_name "Avatar_Lady_Tex_FaceLightmap.png" 
+#define face_tex_name "Avatar_Male_Tex_FaceLightmap.png" 
 // put the face light map in the tex folder in sub and just write the name of it as a string on face_tex_name so like "texturename.extension"
 
 // Shadow options :
@@ -67,7 +66,7 @@
 #define glow_color float4(1.0, 1.0, 1.0, 1.0)
 
 // Outline options : 
-#define use_outline
+// #define use_outline
 #define outline_thickness 1.0
 // #define use_fov_scale // if you plan on making any renders with perspective off, turn this off
 // you will also need to change the outline_thickness accordingly
@@ -94,6 +93,7 @@
 #define use_metal
 #define metal_tex_name "dummy.png"
 // put the metal texture in the tex folder in sub and just write the name of it as a string on metal_tex_name so like "texturename.extension"
+#define metal_comp_test 0.85 // tests blue channel against this value to determine affected area for the metal matcap
 #define metal_scale       float2(1.0, 1.0)
 #define metal_dark_color  float4(0.514705896, 0.301276207, 0.193014711, 1.0)
 #define metal_light_color float4(1.0, 1.0, 1.0, 1.0)
