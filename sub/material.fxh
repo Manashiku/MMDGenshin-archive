@@ -4,7 +4,6 @@ float2 screenSize : VIEWPORTPIXELSIZE; // current screen size in pixels
 
 float4x4 model_matrix : CONTROLOBJECT < string name = "(self)";>;
 float4x4 head_bone : CONTROLOBJECT < string name = "(self)"; string item = "頭"; >;
-float4x4 neck_bone : CONTROLOBJECT < string name = "(self)"; string item = "首"; >;
 float4x4 center_bone : CONTROLOBJECT < string name = "(self)"; string item = "センター"; >;
 float blush_morph : CONTROLOBJECT < string name = "(self)"; string item = blush_facial; >; // this will be turned into a bool thats more responsive
 float time_of_day : CONTROLOBJECT < string name = "genshin.pmx"; string item = "time of day"; >; // this will be turned into a bool thats more responsive
@@ -23,27 +22,45 @@ static float4 modelColor = saturate(modelAmbient + modelDiffuse); // this final 
 
 //==============================================================================================
 
-float camera_fov()
-{
-    float t = mmd_projection[1].y; // get the fov from the projection matrix
-    float Rad2Deg = 180 / 3.1415;
-    float fov = atan(1.0f / t) * 2.0 * Rad2Deg;
-    return fov;
-}
+float3 outline(float3 pos, float3 camera_pos, float3 normal, float outline_rate, float vertex_alpha, float vertex_blue)
+{   
+    float3 wsCamera = cameraPosition - mul(pos, mmd_world);
+    wsCamera = normalize(wsCamera);
 
-float3 outline(float3 pos, float3 camera_pos, float3 normal, float outline_rate, float outline_threshold)
-{
-    // combined outline scaling approach
-    // uses outline scaled based on distance from camera, screen size, and current frames fov
-    float3 world_pos = mul(pos, mmd_world);
-    float dist = distance(camera_pos, world_pos) / screenSize.y; 
-    float fov = camera_fov();
-    #ifndef use_fov_scale
-    fov = 1;
-    #endif
-    float expand = dist * outline_threshold * outline_rate *fov;
-    pos = pos.xyz + normalize(normal) * expand;// * adjust_outline_width;
-    return pos;
+    float4 widthAdj = float4(0.01, 2, 6, 0);
+    float4 widthScales = float4(0.1, 0.25, 0.6, 0);
+
+    float fov = 1; // initialize so it doesnt throw an error
+    if(mmd_projection[3].w) // perspective check
+    {
+        fov = 0.5; // perspective off
+    } 
+    else
+    {
+        fov = 2.414 / mmd_projection[1].y;
+    }
+
+    float depth = (-wsCamera.z) * fov; // fov corrected depth
+    bool outline_depth = depth < widthAdj.y; 
+
+    float4 widthZs = 1;// initialize
+    widthZs.xy = (bool(outline_depth)) ?  widthAdj.xy : widthAdj.yz;
+    widthZs.zw = (bool(outline_depth)) ?  widthScales.xy : widthScales.yz;
+
+    float posFov = (-wsCamera.z) * fov + (-widthZs.x); 
+    float2 posFovZs = float2((-widthZs.x) + widthZs.y, (-widthZs.z) + widthZs.w);
+    float pfaMax = max(posFovZs.x, 0.001);
+    posFov = posFov / pfaMax;
+    posFov = saturate(posFov);
+    posFov = posFov.x * posFovZs.y + widthZs.z;
+    float outline_offset = posFov * outline_rate * 0.414 * vertex_alpha;   
+    float3 offset_pos = pos;  // i originally did something with the blue channel from the vertex color
+    // but that was breaking the model
+    // and when i thought it wasnt
+    // it was breakign where i wasnt checking
+    // so to just avoid any potential issues, im not going to touch it at all
+    offset_pos.xyz = normal * outline_offset + offset_pos;
+    return offset_pos;
 }
 
 float3 outlineRGB2Float(float3 color)
@@ -56,12 +73,6 @@ float3 outlineRGB2Float(float3 color)
 
 float3 outline_color_from_materialID(float alpha)
 {   
-
-    // float3 skin = step(abs(alpha  * 255 - 255),  30) * outlineRGB2Float(outline_color_0.rgb);
-    // float3 tight = step(abs(alpha * 255 - 179 ), 30) * outlineRGB2Float(outline_color_1.rgb);
-    // float3 soft = step(abs(alpha  * 255 - 77),   30) * outlineRGB2Float(outline_color_2.rgb);
-    // float3 hard = step(abs(alpha  * 255 - 0),    30) * outlineRGB2Float(outline_color_3.rgb);
-    // float3 metal = step(abs(alpha * 255 - 126),  30) * outlineRGB2Float(outline_color_4.rgb);
 
     float3 outline = outlineRGB2Float(outline_color_0.rgb);
     if(0.4 > alpha && alpha > 0.2)
@@ -80,22 +91,9 @@ float3 outline_color_from_materialID(float alpha)
     {
         outline = outlineRGB2Float(outline_color_4.rgb);
     }
-
-    // float3 outline = skin + tight + soft + hard + metal;
     return outline;
 }
 
-float3 debug_visualize_material_regions(float alpha)
-{ 
-    float3 A = step(abs(alpha  * 255 - 255),  30) * float3(1.0, 0.0, 0.0);
-    float3 B = step(abs(alpha * 255 - 179 ), 30) * float3(0.0, 1.0, 0.0);
-    float3 C = step(abs(alpha  * 255 - 77),   30) * float3(0.0, 0.0, 1.0);
-    float3 D = step(abs(alpha  * 255 - 0),    30) * float3(1.0, 0.0, 1.0);
-    float3 E = step(abs(alpha * 255 - 126),  30) * float3(1.0, 1.0, 0.0);
-
-    float3 color = A + B + C + D + E;
-    return color;
-}
 
 float4 calculate_ground_shadow(float4 pos)
 {
@@ -132,16 +130,17 @@ float2 sphereUV(float3 normal) // based on sphere mapping article on microsoft w
     // while this is a different formula for sphere mapping than the one typically used for mmd 
     // it produces virtually identical results with maybe a 0.1% error
     uv = normal.xy; // move edited normals to uv variable
-    uv = uv * metal_scale;
+    uv.y = uv.y * metal_scale.y;
     return uv; // output final uv coordinates
 }
 
 float calculate_ndotl(float2 uv, float3 normal)
 {
-    // if(!use_subtexture)
-    // {
-    //     lightDirection.y = 0;
-    // }
+    // theres something wrong in here and i'm not sure yet
+    if(!use_subtexture)
+    {
+        lightDirection.y = 0;
+    }
     float3 light_direction = (lightDirection);
     // the other shaders ive seen just do normalize(lightdirection) here but ive actually found
     // that mmds light misbehaves in the fdotl part so i just normalize it only in rdotl
@@ -165,7 +164,7 @@ float calculate_ndotl(float2 uv, float3 normal)
     float angle = ( acos(rdotl) / 3.14159 ) * 2;
     
     // initialize shadow
-    float shadow = 1.0; // if i dont do this, the if statement breaks shadow
+    float shadow = 1.0; // if u dont do this, the if statement breaks shadow
 
     shadow_right = saturate(pow(abs(shadow_right), face_shadow_pow));
     shadow_left  = saturate(pow(abs(shadow_left),  face_shadow_pow));
@@ -250,8 +249,6 @@ float3 new_ramp_function(float2 uv, float alpha, float green, float3 normal, flo
 
     float3 ramp[10] = { warm_ramp_1, warm_ramp_2, warm_ramp_3, warm_ramp_4, warm_ramp_5, cool_ramp_1, cool_ramp_2, cool_ramp_3, cool_ramp_4, cool_ramp_5}; // array of all ramps
   
-    // the old way i did this gave material regions very ugly borders
-    // i was looking at something honkai related and figured it might work for genshin
     float3 warm = ramp[material_ramp_0];
     float3 cool = ramp[material_ramp_0 + 5]; // move up 5 to get the cool color
     if(0.4 > alpha && alpha > 0.2)
@@ -321,7 +318,8 @@ float3 specular_shading(float3 view, float3 normal, float blue, float alpha)
     return specular_color.rgb * ndoth * rate;
 }
 
-float3 rim_shading(float3 view, float3 normal, float rim_mask)
+float3 rim_shading(float3 view, float3 normal, float rim_mask, float rim_rate) // genshin uses an inset edge detection so this is basically useless if you have an effect that can do that
+// but i'll leave it be since mine won't be 100% ready for a bit
 {
     float ndotv = dot(normal, view); 
     ndotv = saturate(1.0 - ndotv); 
@@ -341,23 +339,40 @@ float3 rim_shading(float3 view, float3 normal, float rim_mask)
     return rim_color.rgb * ndotv * rim_color.a ;
 }
 
-float3 metal_shading(sampler metal_sampler, float3 normal, float metal_mask, float shadow)
+float3 metal_shading(sampler metal_sampler, float3 normal, float3 view, float2 uv, float shadow)
 {
-    // sample metal texture
-    float matcap = tex2D(metal_sampler, sphereUV(normal * metal_mask));
-    float area = 0; // starting area is 0
-    float test_value = 0.75;
-    #ifdef metal_comp_test
-    test_value = metal_comp_test;
-    #endif
-    if(metal_mask > test_value)
-    {
-        area = metal_mask; // because of weird hard edges, setting area to metal_mask reduces them
-    }
+    float3 metal = 1; // initizialize metal
 
-    float3 metal = lerp(metal_dark_color, metal_light_color, matcap) * metal_specular;
-    metal = lerp(metal * metal_in_shadow, metal, shadow);
-    metal = lerp(1.0, metal, area);
+    // sample metal texture
+    float matcap = saturate(tex2D(metal_sampler, sphereUV(normal)) * metal_brightness);
+
+    // sample lightmap texture
+    float2 lightmap = tex2D(lightSampler, uv).xz;
+    
+    if(lightmap.x > 0.75 && use_subtexture)
+    {
+        // lerp to get proper metal coloring
+        metal = lerp(metal_dark_color, metal_light_color, matcap); 
+        // dark color of matcap = metal_dark_color
+        // light color of matcap = metal_light_color
+        // use the the actual matcap as the interpolation value
+        
+        // calculate metal specular 
+        float ndoth = dot(normal, normalize(lightDirection + view));
+        ndoth = max(pow(ndoth, metal_spec_shine), 0.001);
+        ndoth = ndoth * metal_spec_scale;
+        ndoth = saturate(ndoth);
+
+        // get proper metal color
+        float3 metal_spec = ndoth * metal_specular;
+        metal_spec = metal_spec * lightmap.y; // blue channel to control intensity of metal specular
+
+        float3 metal_spec_shadow = metal_spec * metal_shadow; // color of metal spec in shadow
+
+        metal = lerp(metal + metal_spec_shadow, metal + metal_spec, shadow); // interpolated metal with specular
+
+        metal = lerp(metal * metal_in_shadow, metal, shadow); // final lerp with the metal and its proper shadow coloring
+    }
     return  metal;
 }
 
