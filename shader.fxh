@@ -2,8 +2,9 @@
 //                                GENSHIN IMPACT REPLICA SHADER  v0.1                               //
 // =================================================================================================//
 // Genshin Impact style shading recreated for MMD using HLSL by Manashiku                           //
-//  File : main.fxsub
+//  File : shader.fxsub                                                                             //
 //  Date : 8/3/2021                                                                                 //
+//  Update : 12/12/2021                                                                             //
 // =================================================================================================//
 #include "header.fxh"
 //==============================================================================================================//
@@ -39,19 +40,14 @@ vs_out vs_0(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : 
     o.uv = float4(uv,uv2);
     o.vertex = vertexColor;
     o.view = cameraPosition - mul(pos.xyz, (float3x3)mmd_world);
-    // o.pos = calculate_ground_shadow(pos);
-    // o.pos = mul(o.pos, vpMatrix());
     return o;
 }
 
 edge_out edge_vs(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : TEXCOORD2, float2 uv : TEXCOORD0)
 {
     edge_out o;
-    #ifndef exported_from_noesis
-    vertexColor = 0.5;
-    #endif
     float3 camera = cameraPosition - mul(pos.xyz, (float3x3)mmd_world);
-    pos.xyz = outline(pos, cameraPosition, normal, outline_thickness,  vertexColor.a) ;
+    pos.xyz = outline(pos, cameraPosition, normal, outline_thickness,  vertexColor.a, vertexColor.b) ;
     o.pos = mul(pos, mmd_world_view_projection);
     o.uv = uv;
     o.vertex = vertexColor;
@@ -71,10 +67,6 @@ shadow_out vs_gs(float4 pos : POSITION, float2 uv : TEXCOORD0)
 // PIXEL : 
 float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
 {
-
-    #ifndef exported_from_noesis
-    i.vertex = 1.0;
-    #endif
     // INITIALIZE INPUTS : 
     float2 uv = i.uv; 
     if(use_uv2)
@@ -84,7 +76,6 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     float3 normal = normalize(i.normal);
     float4 color = modelColor;
     normal.z *= side;
-    //normal = face_normal(faceSampler, normal, uv);
 
     // DOT PRODUCTS : 
     float ndotl = dot(normal, -lightDirection) * 0.5  + 0.5;
@@ -92,6 +83,21 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     // SAMPLE TEXTURES : 
     float4 diffuse = tex2D(diffuseSampler, uv);
     float4 light   = tex2D(lightSampler, uv);
+    // replace channels with the ones defined in the material
+    #ifdef get_lightmap_red_from_separate_image
+    light.x = tex2D(light_redSampler, uv);
+    #endif
+    #ifdef get_lightmap_green_from_separate_image
+    light.y = tex2D(light_greenSampler, uv);
+    #endif
+    #ifdef get_lightmap_blue_from_separate_image
+    light.z = tex2D(light_blueSampler, uv);
+    #endif
+    #ifdef get_lightmap_alpha_from_separate_image
+    light.w = tex2D(light_alphaSampler, uv);
+    #endif
+
+
     // theres probably a way smarter way to do this but im not smart
     float light_remove = light.g;
     if(light.g > 0.8)
@@ -115,9 +121,6 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
             black_lines = light.g;
         }
     }
-    #ifndef exported_from_noesis
-    i.vertex.r = 1.0;
-    #endif
     float ramp_ndotl = calculate_ndotl(uv, normal);
     ramp_ndotl = ramp_ndotl * i.vertex.r * saturate(side); // saturate(side) is the VFACE value clamped
     float ramp_value = step(shadow_rate, ramp_ndotl); // compare shadow_rate and ramp_ndotl
@@ -131,11 +134,11 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     float3 specular = specular_shading(normalize(i.view), normal, light.b, light.a); 
 
     // RIM
-    float3 rim_in_light  = rim_shading(normalize(i.view), normal, i.vertex.g * rim_light_highlight );
+    float3 rim_in_light  = rim_shading(normalize(i.view), normal, i.vertex.g * rim_light_highlight, i.vertex.b );
     float3 rim = rim_in_light;
 
     // METAL
-    float3 metal = metal_shading(metalSampler, normal, light.r, ramp_value);
+    float3 metal = metal_shading(metalSampler, normal, normalize(i.view), uv.xy, ramp_value);
 
     // PROCESS COLOR : 
     color.rgb = color.rgb * diffuse.rgb;
@@ -150,7 +153,7 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     color.rgb = color.rgb * metal;
     #endif
 
-    color.rgb = lerp(color * toon, color, ramp_value);
+    color.rgb = lerp(color.rgb * toon, color.rgb, ramp_value);
 
     #ifdef is_glow
     color.rgb = diffuse.rgb * diffuse.a * glow_color;
@@ -160,6 +163,7 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     {
         color.rgb = color.rgb * make_blush(diffuse.a);
     }
+    
     return color;
 }
 
@@ -221,7 +225,7 @@ technique tech_0 < string MMDPass = "object_ss"; >
         PixelShader = compile ps_3_0 ps_0(false);
         #endif
     }
-    #endif
+   #endif
     #ifdef use_outline
     pass edgeDraw
     {
