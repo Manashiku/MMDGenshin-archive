@@ -7,7 +7,7 @@ This page could go down or change completely at any point.
 
 ## How to use 
 - I won't provide any files. There are tutorials online about how to make the textures needed
-- Download the latest version from [Releases](https://github.com/Manashiku/MMDGenshin/releases/tag/v0.1.3-beta) 
+- Download the latest version from [Releases](https://github.com/Manashiku/MMDGenshin/releases/tag/v0.1.4-beta) 
 1. Create a copy of the material_default.fx and change the settings for the model youre working on
 2. In PMX Editor, put the ramp texture in the toon slot.
 3. Put the lightmaps in the spa/sph slot and set the type to subtex for everything that isnt the face.
