@@ -4,7 +4,7 @@
 // Genshin Impact style shading recreated for MMD using HLSL by Manashiku                           //
 //  File : shader.fxsub                                                                             //
 //  Date : 8/3/2021                                                                                 //
-//  Update : 12/12/2021                                                                             //
+//  Update : 03/01/2022                                                                             //
 // =================================================================================================//
 #include "header.fxh"
 //==============================================================================================================//
@@ -39,6 +39,14 @@ vs_out vs_0(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : 
     o.normal = normal;
     o.uv = float4(uv,uv2);
     o.vertex = vertexColor;
+    bool vertex_check = all(vertexColor.r + vertexColor.g + vertexColor.b + vertexColor.a) > 0; // check if greater than 0
+    if(!vertex_check) 
+    {
+        o.vertex.r = 1;
+        o.vertex.g = 0.5;
+        o.vertex.b = 1.0;
+        o.vertex.a = 1.0;
+    }
     o.view = cameraPosition - mul(pos.xyz, (float3x3)mmd_world);
     return o;
 }
@@ -46,6 +54,14 @@ vs_out vs_0(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : 
 edge_out edge_vs(float4 pos : POSITION, float3 normal : NORMAL, float4 vertexColor : TEXCOORD2, float2 uv : TEXCOORD0)
 {
     edge_out o;
+    bool vertex_check = all(vertexColor.r + vertexColor.g + vertexColor.b + vertexColor.a) > 0;
+    if(!vertex_check)
+    {
+        vertexColor.r = 1;
+        vertexColor.g = 0.5;
+        vertexColor.b = 1.0;
+        vertexColor.a = 0.2;
+    }
     float3 camera = cameraPosition - mul(pos.xyz, (float3x3)mmd_world);
     pos.xyz = outline(pos, cameraPosition, normal, outline_thickness,  vertexColor.a, vertexColor.b) ;
     o.pos = mul(pos, mmd_world_view_projection);
@@ -67,6 +83,7 @@ shadow_out vs_gs(float4 pos : POSITION, float2 uv : TEXCOORD0)
 // PIXEL : 
 float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
 {
+
     // INITIALIZE INPUTS : 
     float2 uv = i.uv; 
     if(use_uv2)
@@ -163,7 +180,12 @@ float4 ps_0(vs_out i, float side : VFACE, uniform bool use_uv2) : COLOR0
     {
         color.rgb = color.rgb * make_blush(diffuse.a);
     }
-    
+    #if alpha_type == 2
+    color.a = color.a * diffuse.a;
+    #endif
+    //color.rgb = materialToon;
+    // color.rgb = i.vertex.r;
+    // color.rgb = calculate_ndotl(uv, normal);
     return color;
 }
 
