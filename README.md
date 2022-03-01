@@ -13,11 +13,12 @@ This page could go down or change completely at any point.
 3. Put the lightmaps in the spa/sph slot and set the type to subtex for everything that isnt the face.
 4. For the face, you will want to load the _shadow texture into the spa/sph slot instead and set it to either Add or Multi. 
 ### [A tutorial made by chips](https://www.youtube.com/watch?v=BVSgU7WKLaA)
+###[Tutorial by moyonote](https://twitter.com/MonoCereal/status/1497666602107809792)
 
 
 ## Rules 
 - You may distribute your edited material files but do not repackage the entire original shader. That means only the .fx file you load into mmd should be shared.
-- If you use this shader, you must write the shader name or mine somwhere where it is easily seen. 
+- If you use this shader, you must write the shader name or mine somwhere where it is easily seen. You are not cool if you refuse to credit, youre not protecting some brand of yours... youre just being stupid 
 - You are free to use this as a reference for your own shaders but just like above, credit me where it will be easily seen.
 
 ## Contact 
