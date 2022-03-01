@@ -16,6 +16,7 @@ float4 materialAmbient : AMBIENT < string Object  = "Geometry"; >;
 float4 materialEmissive : EMISSIVE < string Object = "Geometry"; >;
 float3 lightDiffuse : DIFFUSE < string Object  = "Light"; >;
 float3 lightAmbient : AMBIENT < string Object  = "Light"; >;
+float3 materialToon : TOONCOLOR;
 static float4 modelDiffuse = materialDiffuse * float4(lightDiffuse, 1.0);
 static float4 modelAmbient = saturate(materialAmbient * float4(lightAmbient, 1.0) + materialEmissive);
 static float4 modelColor = saturate(modelAmbient + modelDiffuse); // this final model color will be multiplied by the diffuse texture
@@ -136,15 +137,20 @@ float2 sphereUV(float3 normal) // based on sphere mapping article on microsoft w
 
 float calculate_ndotl(float2 uv, float3 normal)
 {
-    // theres something wrong in here and i'm not sure yet
     if(!use_subtexture)
     {
         lightDirection.y = 0;
     }
-    float3 light_direction = (lightDirection);
-    // the other shaders ive seen just do normalize(lightdirection) here but ive actually found
-    // that mmds light misbehaves in the fdotl part so i just normalize it only in rdotl
-   
+    float3 light_direction = -(lightDirection);
+
+    float sinx = sin(face_rot_offset);
+    float conx = cos(face_rot_offset);
+    float2x2 face_rotation = float2x2(conx, -sinx, sinx, conx);
+    if(!use_subtexture)
+    {
+        light_direction.xz = mul(face_rotation, light_direction.xz);
+    }
+    
     // sample face shadows 
     float shadow_right = tex2D(faceSampler, float2(      uv.x, uv.y));
     float shadow_left  = tex2D(faceSampler, float2(1.0 - uv.x, uv.y));
@@ -157,8 +163,8 @@ float calculate_ndotl(float2 uv, float3 normal)
     // so just get the directions directly from the bone matrix
     
     // calculate dot products
-    float rdotl = dot(normalize(head_right.xz),      -normalize(light_direction.xz));
-    float fdotl = dot(normalize(head_foward.xz),     -light_direction.xz);
+    float rdotl = dot((head_right.xz),      normalize(light_direction.xz));
+    float fdotl = dot((head_foward.xz),     light_direction.xz);
 
     // calculate light angle
     float angle = ( acos(rdotl) / 3.14159 ) * 2;
@@ -199,7 +205,7 @@ float calculate_ndotl(float2 uv, float3 normal)
     float ndotl = dot(normal, -lightDirection);
     if(!use_subtexture && use_spheremap) // instead of relying on too many material.fx files, take advantage of the 3 spa types to toggle things on and off
     {
-        return saturate(shadow_step );
+        return saturate(shadow_step);
     } else
     {
         return saturate((ndotl * 0.5 + 0.5));
